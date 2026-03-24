@@ -27,7 +27,20 @@ public:
 	virtual void NotifyControllerChanged() override;
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
+public:
+	bool IsMoving() const;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = Sprinting)
+	float SprintingSpeed = 750.0f;
+
+	UPROPERTY(EditAnywhere, Category = Sprinting)
+	float NormalSpeed = 500.0f;
+
+	UPROPERTY(EditAnywhere, Category = Sprinting)
+	float UseStamina = 5.0f;
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class USpringArmComponent> SpringArm;
@@ -35,10 +48,32 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UCameraComponent> Camera;
 
+protected:
+	UPROPERTY(EditAnywhere, Category = Montage)
+	TObjectPtr<class UAnimMontage> RollingMontage;
+
+public:
+	bool bMovementInputEnabled = true;
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UDS1AttributeComponent> AttributeComponent;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = UI)
+	TSubclassOf<UUserWidget> PlayerHUDWidgetClass;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UDS1PlayerHUDWidget> PlayerHUDWidget;
+
 #pragma region InputSystem
 public:
 	void Input_Move(const FInputActionValue& InputValue);
 	void Input_Look(const FInputActionValue& InputValue);
+
+	void Sprinting();
+	void StopSprint();
+	void Rolling();
 
 protected:
 	UPROPERTY(EditAnywhere, Category = InputSystem)
@@ -49,6 +84,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = InputSystem)
 	TObjectPtr<class UInputAction> LookAction;
+
+	UPROPERTY(EditAnywhere, Category = InputSystem)
+	TObjectPtr<class UInputAction> SprintRollingAction;
 
 #pragma endregion
 };

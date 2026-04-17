@@ -13,7 +13,14 @@ public class DS1 : ModuleRules
 			"DS1"
         });
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput" });
+		PublicDependencyModuleNames.AddRange(new string[] { 
+			"Core", 
+			"CoreUObject", 
+			"Engine", 
+			"InputCore", 
+			"EnhancedInput",
+			"GameplayTags"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 

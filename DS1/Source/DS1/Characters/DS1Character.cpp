@@ -8,7 +8,13 @@
 #include "EnhancedInputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/DS1AttributeComponent.h"
+#include "Components/DS1StateComponent.h"
+#include "Components/DS1CombatComponent.h"
 #include "UI/DS1PlayerHUDWidget.h"
+#include "DS1/DS1GameplayTags.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "Interfaces/DS1InteractionInterface.h"
+#include "Equipments/DS1Weapon.h"
 
 // Sets default values
 ADS1Character::ADS1Character()
@@ -35,6 +41,10 @@ ADS1Character::ADS1Character()
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 720.0f, 0.0f);
 
 	AttributeComponent = CreateDefaultSubobject<UDS1AttributeComponent>(TEXT("Attribute"));
+
+	StateComponent = CreateDefaultSubobject<UDS1StateComponent>(TEXT("State"));
+
+	CombatComponent = CreateDefaultSubobject<UDS1CombatComponent>(TEXT("Combat"));
 }
 
 // Called when the game starts or when spawned
@@ -101,6 +111,12 @@ void ADS1Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 		EnhancedInputComponent->BindAction(SprintRollingAction, ETriggerEvent::Canceled, this,
 			&ADS1Character::Rolling);
+
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this,
+			&ADS1Character::Interact);
+
+		EnhancedInputComponent->BindAction(ToggleCombatAction, ETriggerEvent::Triggered, this,
+			&ADS1Character::ToggleCombat);
 	}
 }
 bool ADS1Character::IsMoving() const
@@ -113,9 +129,23 @@ bool ADS1Character::IsMoving() const
 	return false;
 }
 
+bool ADS1Character::CanToggleCombat() const
+{
+	check(StateComponent);
+
+	FGameplayTagContainer CheckTags;
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Attacking);
+	CheckTags.AddTag(DS1GameplayTags::Character_State_Rolling);
+	CheckTags.AddTag(DS1GameplayTags::Character_State_GeneralAction);
+
+	return StateComponent->IsCurrentStateEqualToAny(CheckTags) == false;
+}
+
 void ADS1Character::Input_Move(const FInputActionValue& InputValue)
 {
-	if (bMovementInputEnabled == false)
+	check(StateComponent);
+
+	if (StateComponent->MovmentInputEnabled() == false)
 		return;
 
 	FVector2D MovementVector = InputValue.Get<FVector2D>();
@@ -172,16 +202,84 @@ void ADS1Character::StopSprint()
 void ADS1Character::Rolling()
 {
 	check(AttributeComponent);
+	check(StateComponent);
 
 	if (AttributeComponent->CheckHasEnoughStamina(15.0f))
 	{
-		bMovementInputEnabled = false;
+		StateComponent->ToggleMovementInput(false);
 
 		AttributeComponent->ToggleStaminaRegeneration(false);
 		AttributeComponent->DecreaseStamina(15.0f);
 
 		PlayAnimMontage(RollingMontage);
 
+		StateComponent->SetCurrentState(DS1GameplayTags::Character_State_Rolling);
+
 		AttributeComponent->ToggleStaminaRegeneration(true);
+	}
+}
+
+void ADS1Character::Interact()
+{
+	FHitResult OutHit;
+	const FVector Start = GetActorLocation();
+	const FVector End = Start;
+	const float Radius = 100.0f;
+	
+	TArray<TEnumAsByte<EObjectTypeQuery>> ObjectType;
+	ObjectType.Add(UEngineTypes::ConvertToObjectType(COLLISION_OBJECT_INTERACTION));
+
+	TArray<AActor*> ActorsToIgnore;
+
+	bool bHit = UKismetSystemLibrary::SphereTraceSingleForObjects(
+		this,
+		Start,
+		End,
+		Radius,
+		ObjectType,
+		false,
+		ActorsToIgnore,
+		EDrawDebugTrace::ForDuration,
+		OutHit,
+		true
+	);
+
+	if (bHit)
+	{
+		if (AActor* HitActor = OutHit.GetActor())
+		{
+			IDS1InteractionInterface* Interaction = Cast<IDS1InteractionInterface>(HitActor);
+			if (Interaction)
+			{
+				Interaction->Interact(this);
+			}
+		}
+	}
+}
+
+void ADS1Character::ToggleCombat()
+{
+	check(StateComponent);
+	check(CombatComponent);
+
+	if (CombatComponent)
+	{
+		const ADS1Weapon* Weapon = CombatComponent->GetMainWeapon();
+		if (Weapon)
+		{
+			if (CanToggleCombat())
+			{
+				StateComponent->SetCurrentState(DS1GameplayTags::Character_State_GeneralAction);
+
+				if (CombatComponent->IsCombatEnabled())
+				{
+					PlayAnimMontage(Weapon->GetUnEquipMontage());
+				}
+				else
+				{
+					PlayAnimMontage(Weapon->GetEquipMontage());
+				}
+			}
+		}
 	}
 }

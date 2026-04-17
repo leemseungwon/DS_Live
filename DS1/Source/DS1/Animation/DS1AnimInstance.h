@@ -24,6 +24,7 @@ public:
 public:
 	UFUNCTION()
 	void AnimNotify_ResetMovementInput();
+	void AnimNotify_ResetCurrentState();
 
 protected:
 	UPROPERTY(VisibleAnyWhere, BlueprintReadOnly, Category = Reference)

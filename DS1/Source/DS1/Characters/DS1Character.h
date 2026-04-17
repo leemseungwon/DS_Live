@@ -30,6 +30,12 @@ public:
 
 public:
 	bool IsMoving() const;
+	bool CanToggleCombat() const;
+
+public:
+	FORCEINLINE class UDS1AttributeComponent* GetAttributeComponent() const{ return AttributeComponent;}
+
+	FORCEINLINE class UDS1StateComponent* GetStateComponent() const { return StateComponent; }
 
 protected:
 	UPROPERTY(EditAnywhere, Category = Sprinting)
@@ -52,12 +58,15 @@ protected:
 	UPROPERTY(EditAnywhere, Category = Montage)
 	TObjectPtr<class UAnimMontage> RollingMontage;
 
-public:
-	bool bMovementInputEnabled = true;
-
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<class UDS1AttributeComponent> AttributeComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UDS1StateComponent> StateComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<class UDS1CombatComponent> CombatComponent;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = UI)
@@ -74,6 +83,8 @@ public:
 	void Sprinting();
 	void StopSprint();
 	void Rolling();
+	void Interact();
+	void ToggleCombat();
 
 protected:
 	UPROPERTY(EditAnywhere, Category = InputSystem)
@@ -87,6 +98,12 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = InputSystem)
 	TObjectPtr<class UInputAction> SprintRollingAction;
+
+	UPROPERTY(EditAnywhere, Category = InputSystem)
+	TObjectPtr<class UInputAction> InteractAction;
+
+	UPROPERTY(EditAnywhere, Category = InputSystem)
+	TObjectPtr<class UInputAction> ToggleCombatAction;
 
 #pragma endregion
 };

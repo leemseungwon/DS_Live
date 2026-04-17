@@ -2,6 +2,10 @@
 
 #pragma once
 
+#define COLLISION_OBJECT_INTERACTION ECC_GameTraceChannel3
+
+
+
 UENUM(BlueprintType)
 enum class EDS1AttributeType : uint8
 {
